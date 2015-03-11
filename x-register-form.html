@@ -1,0 +1,219 @@
+<!--
+    @license
+    Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+    This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+    The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+    The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+    Code distributed by Google as part of the polymer project is also
+    subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../core-ajax/core-ajax.html">
+<link rel="import" href="../core-icons/core-icons.html">
+<link rel="import" href="../core-overlay/core-overlay.html">
+<link rel="import" href="../paper-input/paper-input-decorator.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<!--
+Element for Sign Up
+
+##### Example
+
+    <x-register-form token="{{token}}" islogged="{{logged}}" userService="http://localhost/user" tokenService="http://localhost/token">
+    </x-register-form>
+
+@element x-register-form
+@blurb Element for Sign Up
+@status alpha
+@homepage https://github.com/tc-team/x-register-form
+-->
+<polymer-element name="x-register-form" attributes="islogged token userService tokenService" on-keypress="{{keypressHandler}}">
+    <template>
+        <link rel="stylesheet" href="css/style.css">
+
+        <core-ajax id="registerUser"
+            auto="false"
+            url="{{userService}}"
+            method="POST"
+            handleAs="json"
+            withCredentials="true"
+            params = '{
+                "username": "{{username}}",
+                "password": "{{password}}",
+                "email": "{{email}}"
+            }'
+            on-core-response="{{handleResRegister}}">
+        </core-ajax>
+
+        <core-ajax id="createToken"
+            auto="false"
+            url="{{tokenService}}"
+            method="POST"
+            params = '{
+                "email": "{{email}}",
+                "username": "{{username}}",
+                "typeOfToken": "registerUser"
+            }'
+            handleAs="json"
+            withCredentials="true"
+            on-core-response="{{handleResCreateTok}}">
+        </core-ajax>
+
+        <core-ajax id="checkToken"
+            auto="false"
+            url="{{tokenService}}/{{token}}"
+            method="GET"
+            handleAs="json"
+            withCredentials="true"
+            on-core-response="{{handleResCheckTok}}">
+        </core-ajax>
+
+        <span>Create account</span><br>
+        <core-icon class="icon" icon="account-circle"></core-icon>
+
+        <paper-input-decorator floatingLabel  label="Username" error="Value must start with a letter! Allowed: a-z A-Z 0-9 _ -" isInvalid="{{!$.uinput.validity.valid}}">
+            <input id="uinput" pattern="^[a-zA-Z ]+[a-zA-Z0-9_-]*" is="core-input" type="text" value="{{username}}"></input>
+        </paper-input-decorator>
+
+        <paper-input-decorator floatingLabel  label="Email" autoValidate>
+            <input id="einput" is="core-input" type="email" value="{{email}}"></input>
+        </paper-input-decorator>
+
+        <paper-input-decorator floatingLabel  label="Password" error="Allowed: a-z A-Z 0-9 _ -" isInvalid="{{!$.pinput.validity.valid}}">
+            <input id="pinput" pattern="[a-zA-Z0-9_-]*" is="core-input" type="password" value="{{password}}"></input>
+        </paper-input-decorator>
+
+        <paper-input-decorator id="confirm" floatingLabel  label="Confirm Your password" error="Your password and confirmation password do not match.">
+            <input id="pcinput" type="password" is="core-input" value="{{confirmPassword}}" on-change="{{handleConfirm}}"></input>
+        </paper-input-decorator>
+
+        <paper-button on-click="{{sendRequest}}">Create account</paper-button>
+
+        <core-overlay id="tokkenCreated" backdrop autoCloseDisabled>
+            <h3>Check email</h3>
+            <span>To confirm registration, click on the link in the email</span>
+            
+            <div horizontal center-justified layout>
+                <paper-button core-overlay-toggle>Ok</paper-button>
+            </div>
+        </core-overlay>
+
+        <core-overlay id="registerSuccess" backdrop autoCloseDisabled>
+            <span>Registration was successful. You can log in.</span>
+            <div horizontal center-justified layout>
+                <paper-button core-overlay-toggle on-click="{{switchToLogIn}}">Ok</paper-button>
+            </div>
+        </core-overlay>
+    </template>
+
+    <script>
+        Polymer({
+            /**
+            * The `userService` attribute sets URL for user service
+            *
+            * @attribute userService
+            * @type string
+            * @default ''
+            */
+            userService: '',
+
+             /**
+            * The `tokenService` attribute sets URL for token service
+            *
+            * @attribute tokenService
+            * @type string
+            * @default ''
+            */
+            tokenService: '',
+
+             /**
+            * The `token` attribute sets token
+            *
+            * @attribute token
+            * @type string
+            * @default ''
+            */
+            token: '',
+
+            /**
+            * The `islogged` attribute sets a flag that indicates that session is active or not
+            *
+            * @attribute islogged
+            * @type bool
+            * @default false
+            */
+            islogged: false,
+
+            sendRequest: function(event, detail, sender) {
+                if (!this.username) {
+                    this.$.uinput.focus();
+                    return;
+                } else if (!this.password) {
+                    this.$.pinput.focus();
+                    return;
+                } else if (!this.confirmPassword) {
+                    this.$.pcinput.focus();
+                    return;
+                } else if (!this.email) {
+                    this.$.einput.focus();
+                    return;
+                } else {
+                    localStorage.setItem("username", this.username);
+                    localStorage.setItem("email", this.email);
+                    localStorage.setItem("password", this.password);
+                    this.$.createToken.go();
+                }
+            },
+
+            handleResRegister: function (event, res) {
+                if (res.response.status === 'success') {
+                    this.$.registerSuccess.toggle();
+                } else if (res.response.status === 'error') {
+                    this.isHidden = false;
+                };
+            },
+
+            handleConfirm: function () {
+                if (this.password != this.confirmPassword) {
+                    this.$.confirm.isInvalid = true;
+                } else if (this.password === this.confirmPassword) {
+                    this.$.confirm.isInvalid = false;
+                }
+            },
+
+            keypressHandler: function (event, detail, sender){
+                if (event.charCode === 13) this.sendRequest();
+            },
+
+            handleResCreateTok: function (event, res) {
+                this.$.tokkenCreated.toggle();
+            },
+
+            tokenChanged: function (oldValue, newValue) {
+                if (newValue != '') {
+                    this.$.checkToken.go();
+                }
+            },
+
+            handleResCheckTok: function (event, res) {
+                if (res.response) {
+                    this.username = localStorage.getItem("username");
+                    this.email = localStorage.getItem("email");
+                    this.password = localStorage.getItem("password");
+                    localStorage.removeItem("username");
+                    localStorage.removeItem("email");
+                    localStorage.removeItem("password");
+                    this.$.registerUser.go();
+                } else {
+                    localStorage.removeItem("username");
+                    localStorage.removeItem("email");
+                    localStorage.removeItem("password");
+                }
+            },
+
+            switchToLogIn: function () {
+                this.token = '';
+            }
+        });
+    </script>
+</polymer-element>

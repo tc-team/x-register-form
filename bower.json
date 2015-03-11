@@ -1,0 +1,32 @@
+{
+  "name": "x-register-form",
+  "version": "0.0.0",
+  "authors": [
+    "TC"
+  ],
+  "description": "Element providing solution for Sign Up",
+  "keywords": [
+    "web-component",
+    "web-components",
+    "polymer",
+    "menu",
+    "session",
+    "sign up"
+  ],
+  "main": "x-register-form.html",
+  "license": "MIT",
+  "homepage": "https://github.com/tc-team/x-register-form/",
+  "ignore": [
+    "/.*",
+    "/tests/"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^0.5.4",
+    "core-ajax": "Polymer/core-ajax#~0.5.5",
+    "paper-input": "Polymer/paper-input#~0.5.5",
+    "core-icon": "Polymer/core-icon#~0.5.5"
+  },
+  "devDependencies": {
+    "web-component-tester": "*"
+  }
+}
