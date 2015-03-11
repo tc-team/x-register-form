@@ -1,0 +1,7 @@
+{
+  "name": "x-register-form#gh-pages",
+  "private": true,
+  "dependencies": {
+    "x-register-form": "tc-team/x-register-form#master"
+  }
+}
